@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детали фильма - Кинопортал</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+<body>
+    <header>
+        <a href="index.html" class="back-button">← Назад к поиску</a>
+        <h1 id="movie-title">🍿 avengers</h1>
+    </header>
+
+    <main class="movie-details">
+        <div class="details-container">
+            <div class="poster-section">
+                <img id="detail-poster" src="" alt="Постер фильма" class="detail-poster">
+                <div class="movie-meta">
+                    <div class="rating" id="rating">⭐ 0.0</div>
+                    <div class="year" id="detail-year">Год: 2024</div>
+                    <div class="genre" id="genres">Жанр: Загрузка...</div>
+                    <div class="runtime" id="runtime">Длительность: 0 мин</div>
+                    <button id="favorite-btn" class="favorite-btn">☆ Добавить в избранное</button>
+                    
+                </div>
+            </div>
+            
+            <div class="info-section">
+                <div class="overview">
+                    <h2>Описание</h2>
+                    <p id="detail-overview">Загрузка описания...</p>
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-item">
+                        <h3>📅 Дата выхода</h3>
+                        <p id="released"></p>
+                    </div>
+                    <div class="detail-item">
+                        <h3>🏆 Рейтинг</h3>
+                        <p id="imdb-rating"></p>
+                    </div>
+                    <div class="detail-item">
+                        <h3>🎬 Режиссёр</h3>
+                        <p id="director"></p>
+                    </div>
+                    <div class="detail-item">
+                        <h3>🎭 Актёры</h3>
+                        <p id="actors"></p>
+                    </div>
+                    <div class="detail-item">
+                        <h3>🏆 Награды</h3>
+                        <p id="awards"></p>
+                    </div>
+                    <div class="detail-item">
+                        <h3>🌎 Страна</h3>
+                        <p id="country"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Добавьте эту секцию после блока .details-container и перед закрывающим тегом main -->
+<section class="trailer-section">
+    <h2><i class="fas fa-play-circle"></i> Трейлеры</h2>
+    
+    <div id="trailer-container">
+        <!-- Основной плеер -->
+        <div class="youtube-player-container">
+            <div class="player-placeholder" id="player-placeholder">
+                <div class="placeholder-content">
+                    <i class="fab fa-youtube"></i>
+                    <p>Трейлер будет загружен здесь</p>
+                </div>
+            </div>
+            <iframe id="youtube-iframe" 
+                    style="display: none;" 
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+            </iframe>
+        </div>
+        
+        <!-- Поисковая строка -->
+        <div class="trailer-search">
+            <div class="search-box">
+                <input type="text" 
+                       id="trailer-search-input" 
+                       placeholder="Искать видео на YouTube..."
+                       value="">
+                <button id="search-trailer-btn">
+                    <i class="fas fa-search"></i> Найти
+                </button>
+            </div>
+            <p class="search-hint">Или посмотрите рекомендуемые видео ниже</p>
+        </div>
+        
+        <!-- Рекомендуемые видео -->
+        <div class="recommended-videos">
+            <h3>Рекомендуем посмотреть</h3>
+            <div class="video-suggestions">
+                <button class="video-suggestion" data-search="официальный трейлер">
+                    <i class="fas fa-film"></i>
+                    <span>Официальный трейлер</span>
+                </button>
+                <button class="video-suggestion" data-search="обзор фильма">
+                    <i class="fas fa-star"></i>
+                    <span>Обзоры и рецензии</span>
+                </button>
+                <button class="video-suggestion" data-search="за кадром">
+                    <i class="fas fa-video"></i>
+                    <span>За кадром</span>
+                </button>
+                <button class="video-suggestion" data-search="интервью с актерами">
+                    <i class="fas fa-microphone"></i>
+                    <span>Интервью с актерами</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Ссылка на YouTube -->
+        <div class="youtube-direct-link">
+            <a id="youtube-direct-link" 
+               href="#" 
+               target="_blank" 
+               class="youtube-link">
+                <i class="fab fa-youtube"></i> Открыть на YouTube
+            </a>
+        </div>
+    </div>
+</section>
+    </main>
+
+    <script src="movie-details.js" type="module"></script>
+   <!-- В конце body, после movie-details.js -->
+<script src="trailers.js"></script>
+
+
+
+</body>
+</html>

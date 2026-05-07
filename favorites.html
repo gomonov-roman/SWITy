@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Избранное - Кинопортал</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <a href="index.html" class="back-button">← Назад к поиску</a>
+        <h1>⭐ Мои избранные фильмы</h1>
+        <p class="favorites-count">Загружаем избранное...</p>
+    </header>
+
+    <main class="favorites-page">
+        <div class="favorites-controls">
+            <button id="clear-all" class="clear-btn">🗑️ Очистить все</button>
+            <button id="sort-by-date" class="sort-btn">📅 По дате добавления</button>
+            <button id="sort-by-title" class="sort-btn">🔤 По названию</button>
+            <button id="sort-by-rating" class="sort-btn">⭐ По рейтингу</button>
+        </div>
+        
+        <div id="favorites-container" class="movies-grid">
+            <!-- Избранные фильмы будут здесь -->
+        </div>
+        
+        <div id="empty-favorites" class="empty-state" style="display: none;">
+            <div class="empty-icon">⭐</div>
+            <h2>Список избранного пуст</h2>
+            <p>Добавляйте фильмы в избранное, нажимая на звёздочку ☆</p>
+            <a href="index.html" class="cta-button">Найти фильмы для добавления</a>
+        </div>
+    </main>
+
+    <script src="favorites.js" type="module"></script>
+</body>
+</html>

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кинопортал - поиск фильмов и сериалов</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Шапка -->
+    <header>
+        <div class="header-top">
+            <div class="logo">
+                <h1><i class="fas fa-film"></i> CineMate</h1>
+                <p class="tagline">Найди свой идеальный фильм</p>
+            </div>
+            <div class="header-right">
+                <a href="favorites.html" class="favorites-link">
+                    <i class="fas fa-star"></i> Избранное 
+                    <span id="fav-count" class="fav-count">0</span>
+                </a>
+                <button id="theme-toggle" class="theme-btn" title="Сменить тему">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="search-section">
+            <form id="search-form">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Введите название фильма, сериала или актера..." 
+                        required>
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i> Найти
+                    </button>
+                </div>
+                <div class="search-filters">
+                    <label class="filter-option">
+                        <input type="radio" name="type" value="" checked> Все
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="type" value="movie"> Фильмы
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="type" value="series"> Сериалы
+                    </label>
+                </div>
+            </form>
+        </div>
+        
+        <nav class="main-nav">
+            <a href="#trending" class="nav-link active"><i class="fas fa-fire"></i> В тренде</a>
+            <a href="#top-rated" class="nav-link"><i class="fas fa-crown"></i> Топ рейтинга</a>
+            <a href="#upcoming" class="nav-link"><i class="fas fa-calendar-alt"></i> Скоро выйдут</a>
+            <a href="#genres" class="nav-link"><i class="fas fa-tags"></i> Жанры</a>
+        </nav>
+    </header>
+
+    <!-- Основной контент -->
+    <main>
+        <!-- Секция "В тренде" -->
+        <section id="trending" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-fire"></i> Популярные сейчас</h2>
+                <a href="#" class="see-all">Смотреть все <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div id="trending-movies" class="movies-grid">
+                <!-- Трендовые фильмы загрузятся через JS -->
+            </div>
+        </section>
+
+        <!-- Секция "Топ рейтинга" -->
+        <section id="top-rated" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-crown"></i> Лучшие по рейтингу</h2>
+                <a href="#" class="see-all">Смотреть все <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div id="top-rated-movies" class="movies-grid">
+                <!-- Фильмы с высоким рейтингом -->
+            </div>
+        </section>
+
+        <!-- Секция "Скоро выйдут" -->
+        <section id="upcoming" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-calendar-alt"></i> Скоро в кино</h2>
+                <a href="#" class="see-all">Смотреть все <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div id="upcoming-movies" class="movies-grid">
+                <!-- Предстоящие фильмы -->
+            </div>
+        </section>
+
+        <!-- Секция жанров -->
+        <section id="genres" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-tags"></i> Выберите жанр</h2>
+            </div>
+            <div class="genres-grid">
+                <button class="genre-btn" data-genre="action">🎬 Боевик</button>
+                <button class="genre-btn" data-genre="comedy">😂 Комедия</button>
+                <button class="genre-btn" data-genre="drama">🎭 Драма</button>
+                <button class="genre-btn" data-genre="horror">👻 Ужасы</button>
+                <button class="genre-btn" data-genre="sci-fi">🚀 Фантастика</button>
+                <button class="genre-btn" data-genre="fantasy">🐉 Фэнтези</button>
+                <button class="genre-btn" data-genre="thriller">🔪 Триллер</button>
+                <button class="genre-btn" data-genre="romance">❤️ Романтика</button>
+                <button class="genre-btn" data-genre="animation">🐭 Мультфильм</button>
+                <button class="genre-btn" data-genre="mystery">🕵️‍♂️ Детектив</button>
+            </div>
+        </section>
+
+        <!-- Секция поиска (результаты появятся здесь) -->
+        <section id="search-results" class="section" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-search"></i> Результаты поиска</h2>
+                <span id="results-count" class="results-count">Найдено: 0</span>
+            </div>
+            <div id="movies-container" class="movies-grid">
+                <!-- Результаты поиска -->
+            </div>
+        </section>
+
+        <!-- Информационный блок -->
+        <div class="info-box">
+            <div class="info-card">
+                <i class="fas fa-database"></i>
+                <h3>База фильмов</h3>
+                <p>Более 500,000 фильмов и сериалов</p>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-star"></i>
+                <h3>Рейтинги</h3>
+                <p>Актуальные оценки IMDb и кинокритиков</p>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-video"></i>
+                <h3>Трейлеры</h3>
+                <p>Смотрите официальные трейлеры</p>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-mobile-alt"></i>
+                <h3>На всех устройствах</h3>
+                <p>Совместимость с любым гаджетом</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-film"></i> Кинопортал</h3>
+                <p>Лучший сайт для поиска информации о фильмах и сериалах. Актуальные рейтинги, описания и новости.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Быстрые ссылки</h3>
+                <a href="index.html"><i class="fas fa-home"></i> Главная</a>
+                <a href="favorites.html"><i class="fas fa-star"></i> Избранное</a>
+                <a href="#trending"><i class="fas fa-fire"></i> В тренде</a>
+                <a href="#top-rated"><i class="fas fa-crown"></i> Топ рейтинга</a>
+            </div>
+            <div class="footer-section">
+                <h3>Поддержка</h3>
+                <a href="#"><i class="fas fa-question-circle"></i> Помощь</a>
+                <a href="#"><i class="fas fa-envelope"></i> Контакты</a>
+                <a href="#"><i class="fas fa-shield-alt"></i> Конфиденциальность</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Кинопортал. Используется OMDb API.Наслаждайтесь просмотром.</p>
+        </div>
+    </footer>
+
+    <!-- Скрипты -->
+    <script src="app.js" type="module"></script>
+    <script src="home.js" type="module"></script>
+</body>
+</html>
