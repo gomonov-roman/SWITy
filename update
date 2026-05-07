@@ -1,0 +1,3694 @@
+
+// ========== ДОБАВЬ ЭТОТ КОД В home.js ==========
+
+// Конфигурация API
+const API_KEY = 'b1325fa0'; // Твой API ключ (я использую тестовый, замени на свой)
+const API_URL = 'https://www.omdbapi.com/';
+
+// Функция поиска фильмов по жанру
+async function searchMoviesByGenre(genre) {
+    // Маппинг русских жанров на английские для API
+    const genreMap = {
+        'action': 'action',
+        'comedy': 'comedy',
+        'drama': 'drama',
+        'horror': 'horror',
+        'sci-fi': 'sci-fi',
+        'fantasy': 'fantasy',
+        'thriller': 'thriller',
+        'romance': 'romance',
+        'animation': 'animation',
+        'mystery': 'mystery'
+    };
+    
+    const englishGenre = genreMap[genre] || genre;
+    
+    // Показываем секцию результатов
+    const searchResultsSection = document.getElementById('search-results');
+    const moviesContainer = document.getElementById('movies-container');
+    const resultsCountSpan = document.getElementById('results-count');
+    
+    searchResultsSection.style.display = 'block';
+    moviesContainer.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Загрузка фильмов...</div>';
+    
+    // Прокручиваем к результатам
+    searchResultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    
+    // Ищем фильмы по жанру (через поиск популярных фильмов)
+    // OMDb API не имеет прямого поиска по жанру, поэтому используем разные поисковые запросы
+    const searchQueries = [
+        englishGenre,
+        `${englishGenre} movie`,
+        `best ${englishGenre} films`
+    ];
+    
+    let allMovies = [];
+    
+    for (const query of searchQueries) {
+        try {
+            const response = await fetch(`${API_URL}?apikey=${API_KEY}&s=${encodeURIComponent(query)}&type=movie&page=1`);
+            const data = await response.json();
+            
+            if (data.Search && data.Search.length > 0) {
+                // Фильтруем результаты, чтобы оставить только те, у которых есть жанр
+                for (const movie of data.Search) {
+                    // Получаем детали фильма для проверки жанра
+                    const detailsResponse = await fetch(`${API_URL}?apikey=${API_KEY}&i=${movie.imdbID}`);
+                    const details = await detailsResponse.json();
+                    
+                    if (details.Genre && details.Genre.toLowerCase().includes(englishGenre)) {
+                        if (!allMovies.some(m => m.imdbID === movie.imdbID)) {
+                            movie.Genre = details.Genre;
+                            movie.Plot = details.Plot;
+                            allMovies.push(movie);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`Ошибка при поиске жанра ${genre}:`, error);
+        }
+        
+        if (allMovies.length >= 20) break; // Достаточно 20 фильмов
+    }
+    
+    // Убираем дубликаты
+    allMovies = allMovies.filter((movie, index, self) => 
+        index === self.findIndex(m => m.imdbID === movie.imdbID)
+    );
+    
+    // Отображаем результаты
+    if (allMovies.length > 0) {
+        resultsCountSpan.innerHTML = `Найдено: ${allMovies.length}`;
+        displayGenreMovies(allMovies, genre);
+    } else {
+        moviesContainer.innerHTML = `
+            <div class="no-results">
+                <i class="fas fa-tags"></i>
+                <h3>Фильмы в жанре "${getGenreRussianName(genre)}" не найдены</h3>
+                <p>Попробуйте выбрать другой жанр</p>
+            </div>
+        `;
+    }
+}
+
+// Получение русского названия жанра
+function getGenreRussianName(genre) {
+    const names = {
+        'action': 'Боевик',
+        'comedy': 'Комедия',
+        'drama': 'Драма',
+        'horror': 'Ужасы',
+        'sci-fi': 'Фантастика',
+        'fantasy': 'Фэнтези',
+        'thriller': 'Триллер',
+        'romance': 'Романтика',
+        'animation': 'Мультфильм',
+        'mystery': 'Детектив'
+    };
+    return names[genre] || genre;
+}
+
+// Отображение фильмов по жанру
+function displayGenreMovies(movies, genre) {
+    const moviesContainer = document.getElementById('movies-container');
+    const sectionHeader = document.querySelector('#search-results .section-header h2');
+    
+    sectionHeader.innerHTML = `<i class="fas fa-tags"></i> Фильмы в жанре: ${getGenreRussianName(genre)}`;
+    
+    moviesContainer.innerHTML = movies.map(movie => `
+        <div class="movie-card" data-id="${movie.imdbID}">
+            <div class="movie-poster">
+                <img src="${movie.Poster !== 'N/A' ? movie.Poster : 'https://via.placeholder.com/300x450?text=No+Poster'}" 
+                     alt="${movie.Title}">
+                <div class="movie-overlay">
+                    <button class="view-details-btn" data-id="${movie.imdbID}">
+                        <i class="fas fa-info-circle"></i> Подробнее
+                    </button>
+                </div>
+            </div>
+            <div class="movie-info">
+                <h3 class="movie-title">${movie.Title}</h3>
+                <div class="movie-year">📅 ${movie.Year}</div>
+                <div class="movie-type">${movie.Type === 'movie' ? '🎬 Фильм' : '📺 Сериал'}</div>
+                ${movie.Genre ? `<div class="movie-genre">🎭 ${movie.Genre.split(',')[0]}</div>` : ''}
+            </div>
+        </div>
+    `).join('');
+    
+    // Добавляем обработчики для карточек фильмов
+    document.querySelectorAll('.movie-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+            const movieId = card.dataset.id;
+            if (movieId) {
+                window.location.href = `movie-details.html?id=${movieId}`;
+            }
+        });
+    });
+    
+    document.querySelectorAll('.view-details-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const movieId = btn.dataset.id;
+            if (movieId) {
+                window.location.href = `movie-details.html?id=${movieId}`;
+            }
+        });
+    });
+}
+
+// Инициализация кнопок жанров
+function initGenreButtons() {
+    const genreButtons = document.querySelectorAll('.genre-btn');
+    
+    genreButtons.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            const genre = btn.dataset.genre;
+            
+            // Добавляем активный класс
+            genreButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Загружаем фильмы по жанру
+            await searchMoviesByGenre(genre);
+        });
+    });
+}
+
+// Альтернативный, более простой способ (если API не работает)
+// Используем предустановленные фильмы для каждого жанра
+const genreMoviesCache = {
+    'action': [
+        { imdbID: 'tt4154796', Title: 'Мстители: Финал', Year: '2019', Poster: 'https://m.media-amazon.com/images/M/MV5BMTc5MDE2ODcwNV5BMl5BanBnXkFtZTgwMzI2NzQ2NzM@._V1_SX300.jpg', Type: 'movie', Genre: 'Action, Adventure, Drama' },
+        { imdbID: 'tt7286456', Title: 'Джокер', Year: '2019', Poster: 'https://m.media-amazon.com/images/M/MV5BNGVjNWI4ZGUtNzE0MS00YTJmLWE0ZDctN2ZiYTk2YmI3NTYyXkEyXkFqcGdeQXVyMTkxNjUyNQ@@._V1_SX300.jpg', Type: 'movie', Genre: 'Action, Crime, Drama' }
+    ],
+    'comedy': [
+        { imdbID: 'tt315464', Title: 'Знакомство с Факерами', Year: '2015', Poster: 'https://via.placeholder.com/300x450?text=No+Poster', Type: 'movie', Genre: 'Comedy' }
+    ]
+    // Добавь больше фильмов по желанию
+};
+
+// Упрощённая версия, если API не работает
+async function searchMoviesByGenreSimple(genre) {
+    const searchResultsSection = document.getElementById('search-results');
+    const moviesContainer = document.getElementById('movies-container');
+    const resultsCountSpan = document.getElementById('results-count');
+    
+    searchResultsSection.style.display = 'block';
+    
+    // Показываем сообщение о разработке
+    moviesContainer.innerHTML = `
+        <div class="info-message">
+            <i class="fas fa-tags"></i>
+            <h3>Фильтрация по жанру</h3>
+            <p>Для полной работы функции нужен API ключ OMDb.</p>
+            <p>Вы можете получить бесплатный ключ на <a href="http://www.omdbapi.com/apikey.aspx" target="_blank">OMDb API</a></p>
+            <button id="test-local-btn" class="test-btn">Показать тестовые фильмы</button>
+        </div>
+    `;
+    
+    resultsCountSpan.innerHTML = `Демо-режим`;
+    
+    // Добавляем тестовую кнопку
+    const testBtn = document.getElementById('test-local-btn');
+    if (testBtn) {
+        testBtn.onclick = () => {
+            const testMovies = getTestMoviesByGenre(genre);
+            displayGenreMovies(testMovies, genre);
+            resultsCountSpan.innerHTML = `Найдено: ${testMovies.length} (демо)`;
+        };
+    }
+}
+
+// Тестовые фильмы для демонстрации
+function getTestMoviesByGenre(genre) {
+    const testData = {
+        'action': [
+            { imdbID: 'tt1', Title: 'Боевик: Начало', Year: '2024', Poster: 'https://via.placeholder.com/300x450?text=Action+Movie', Type: 'movie', Genre: 'Action' },
+            { imdbID: 'tt2', Title: 'Крутые парни', Year: '2023', Poster: 'https://via.placeholder.com/300x450?text=Action+Movie', Type: 'movie', Genre: 'Action' }
+        ],
+        'comedy': [
+            { imdbID: 'tt3', Title: 'Смешные истории', Year: '2024', Poster: 'https://via.placeholder.com/300x450?text=Comedy', Type: 'movie', Genre: 'Comedy' }
+        ]
+    };
+    return testData[genre] || [{ imdbID: 'tt0', Title: 'Тестовый фильм', Year: '2024', Poster: 'https://via.placeholder.com/300x450?text=Test', Type: 'movie', Genre: genre }];
+}
+
+// Запускаем инициализацию когда страница загрузится
+document.addEventListener('DOMContentLoaded', () => {
+    initGenreButtons();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// const API_KEY = 'b1325fa0';
+
+
+// Популярные запросы для трендов
+const TREND_SEARCHES = [
+    'avengers',
+    'batman',
+    'harry potter',
+    'star wars',
+    'lord of the rings',
+    'marvel',
+    'disney',
+    'pixar',
+    'christmas',
+    'horror'
+];
+
+// Жанры для поиска
+const GENRE_MAP = {
+    'action': 'боевик',
+    'comedy': 'комедия',
+    'drama': 'драма',
+    'horror': 'ужасы',
+    'sci-fi': 'фантастика',
+    'fantasy': 'фэнтези',
+    'thriller': 'триллер',
+    'romance': 'романтика',
+    'animation': 'мультфильм',
+    'mystery': 'детектив'
+};
+
+// Загружаем трендовые фильмы
+async function loadTrendingMovies() {
+    const container = document.getElementById('trending-movies');
+    container.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Загружаем популярные фильмы...</div>';
+    
+    try {
+        // Берем первые 3 популярных запроса
+        const promises = TREND_SEARCHES.slice(0, 3).map(query => 
+            fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&s=${query}&type=movie&page=1`)
+                .then(res => res.json())
+        );
+        
+        const results = await Promise.all(promises);
+        const allMovies = results.flatMap(r => r.Search || []).slice(0, 8);
+        
+        container.innerHTML = '';
+        
+        // Получаем детальную информацию для каждого фильма
+        const detailedPromises = allMovies.map(movie => 
+            fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${movie.imdbID}`)
+                .then(res => res.json())
+        );
+        
+        const detailedMovies = await Promise.all(detailedPromises);
+        
+        detailedMovies.forEach(movie => {
+            if (movie.Response === 'True') {
+                const card = createMovieCard(movie);
+                container.appendChild(card);
+            }
+        });
+        
+    } catch (error) {
+        container.innerHTML = '<div class="error"><i class="fas fa-exclamation-triangle"></i> Не удалось загрузить тренды</div>';
+    }
+}
+
+// Загружаем фильмы с высоким рейтингом
+async function loadTopRatedMovies() {
+    const container = document.getElementById('top-rated-movies');
+    
+    // Поиск популярных фильмов (у OMDb нет рейтингового API, используем популярные запросы)
+    const queries = ['the godfather', 'shawshank', 'pulp fiction', 'forrest gump', 'inception', 'matrix', 'interstellar', 'parasite'];
+    
+    try {
+        const promises = queries.map(query => 
+            fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&t=${query}`)
+                .then(res => res.json())
+        );
+        
+        const movies = await Promise.all(promises);
+        const validMovies = movies.filter(m => m.Response === 'True');
+        
+        container.innerHTML = '';
+        
+        validMovies.forEach(movie => {
+            const card = createMovieCard(movie);
+            container.appendChild(card);
+        });
+        
+    } catch (error) {
+        console.error('Ошибка загрузки топовых фильмов:', error);
+    }
+}
+
+// Загружаем предстоящие фильмы (поиск по годам)
+async function loadUpcomingMovies() {
+    const container = document.getElementById('upcoming-movies');
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
+    
+    try {
+        const response = await fetch(
+            `https://www.omdbapi.com/?apikey=${API_KEY}&s=202${nextYear.toString().slice(-1)}&type=movie&y=${nextYear}`
+        );
+        const data = await response.json();
+        
+        if (data.Response === 'True') {
+            container.innerHTML = '';
+            
+            // Берем первые 6 фильмов
+            const moviesToShow = data.Search.slice(0, 6);
+            
+            const detailedPromises = moviesToShow.map(movie => 
+                fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${movie.imdbID}`)
+                    .then(res => res.json())
+            );
+            
+            const detailedMovies = await Promise.all(detailedPromises);
+            
+            detailedMovies.forEach(movie => {
+                if (movie.Response === 'True') {
+                    const card = createMovieCard(movie);
+                    // Добавляем метку "Скоро"
+                    const soonBadge = document.createElement('div');
+                    soonBadge.className = 'soon-badge';
+                    soonBadge.textContent = 'Скоро';
+                    card.appendChild(soonBadge);
+                    container.appendChild(card);
+                }
+            });
+        } else {
+            container.innerHTML = '<div class="info-message">Информация о предстоящих фильмах скоро появится</div>';
+        }
+        
+    } catch (error) {
+        console.error('Ошибка загрузки предстоящих фильмов:', error);
+    }
+}
+
+// Создаем карточку фильма (общая функция)
+function createMovieCard(movie) {
+    const card = document.createElement('a');
+    card.className = 'movie-card';
+    card.href = `movie-details.html?id=${movie.imdbID}`;
+    
+    const img = document.createElement('img');
+    img.className = 'movie-poster';
+    img.src = (movie.Poster !== 'N/A') ? movie.Poster : 'https://via.placeholder.com/300x450?text=No+Poster';
+    img.alt = movie.Title;
+    img.loading = 'lazy';
+    
+    const title = document.createElement('h3');
+    title.className = 'movie-title';
+    title.textContent = movie.Title;
+    
+    const year = document.createElement('div');
+    year.className = 'movie-year';
+    year.textContent = movie.Year;
+    
+    const rating = document.createElement('div');
+    rating.className = 'movie-rating';
+    rating.innerHTML = `<i class="fas fa-star"></i> ${movie.imdbRating || 'N/A'}`;
+    
+    // Кнопка избранного
+    const favBtn = document.createElement('button');
+    favBtn.className = 'card-fav-btn';
+    favBtn.innerHTML = '☆';
+    favBtn.title = 'Добавить в избранное';
+    favBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const favorites = JSON.parse(localStorage.getItem('moviePortal_favorites') || '[]');
+        if (!favorites.includes(movie.imdbID)) {
+            favorites.push(movie.imdbID);
+            localStorage.setItem('moviePortal_favorites', JSON.stringify(favorites));
+            favBtn.innerHTML = '★';
+            favBtn.classList.add('active');
+            updateFavoritesCount();
+            showNotification(`"${movie.Title}" добавлен в избранное!`);
+        }
+    });
+    
+    // Проверяем, есть ли уже в избранном
+    const favorites = JSON.parse(localStorage.getItem('moviePortal_favorites') || '[]');
+    if (favorites.includes(movie.imdbID)) {
+        favBtn.innerHTML = '★';
+        favBtn.classList.add('active');
+    }
+    
+    const genre = document.createElement('div');
+    genre.className = 'movie-genre';
+    genre.textContent = movie.Genre?.split(',')[0] || 'Фильм';
+    
+    card.append(img, favBtn, rating, title, year, genre);
+    return card;
+}
+
+// Обновляем счетчик избранного
+function updateFavoritesCount() {
+    const favorites = JSON.parse(localStorage.getItem('moviePortal_favorites') || '[]');
+    const favCountElement = document.getElementById('fav-count');
+    if (favCountElement) {
+        favCountElement.textContent = favorites.length;
+    }
+}
+
+// Уведомления
+function showNotification(message) {
+    const notification = document.createElement('div');
+    notification.className = 'notification';
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
+
+// Поиск по жанрам
+function setupGenreButtons() {
+    document.querySelectorAll('.genre-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const genre = btn.dataset.genre;
+            const genreName = GENRE_MAP[genre];
+            
+            // Показываем секцию результатов поиска
+            document.getElementById('search-results').style.display = 'block';
+            document.getElementById('trending').style.display = 'none';
+            document.getElementById('top-rated').style.display = 'none';
+            document.getElementById('upcoming').style.display = 'none';
+            document.getElementById('genres').style.display = 'none';
+            
+            const container = document.getElementById('movies-container');
+            container.innerHTML = `<div class="loading">Ищем ${genreName}...</div>`;
+            
+            try {
+                const response = await fetch(
+                    `https://www.omdbapi.com/?apikey=${API_KEY}&s=${genreName}&type=movie`
+                );
+                const data = await response.json();
+                
+                if (data.Response === 'True') {
+                    container.innerHTML = '';
+                    
+                    const promises = data.Search.slice(0, 12).map(movie => 
+                        fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${movie.imdbID}`)
+                            .then(res => res.json())
+                    );
+                    
+                    const detailedMovies = await Promise.all(promises);
+                    
+                    detailedMovies.forEach(movie => {
+                        if (movie.Response === 'True') {
+                            const card = createMovieCard(movie);
+                            container.appendChild(card);
+                        }
+                    });
+                    
+                    document.getElementById('results-count').textContent = `Найдено: ${data.Search.length}`;
+                } else {
+                    container.innerHTML = `<div class="error">Фильмы в жанре "${genreName}" не найдены</div>`;
+                }
+            } catch (error) {
+                container.innerHTML = '<div class="error">Ошибка поиска</div>';
+            }
+        });
+    });
+}
+
+// Переключение темы
+function setupThemeToggle() {
+    const themeBtn = document.getElementById('theme-toggle');
+    const icon = themeBtn.querySelector('i');
+    
+    // Проверяем сохраненную тему
+    const savedTheme = localStorage.getItem('kinoportal-theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        icon.className = 'fas fa-sun';
+    }
+    
+    themeBtn.addEventListener('click', () => {
+        document.body.classList.toggle('light-theme');
+        
+        if (document.body.classList.contains('light-theme')) {
+            localStorage.setItem('kinoportal-theme', 'light');
+            icon.className = 'fas fa-sun';
+        } else {
+            localStorage.setItem('kinoportal-theme', 'dark');
+            icon.className = 'fas fa-moon';
+        }
+    });
+}
+
+// Навигация по странице
+function setupNavigation() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    
+    navLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Убираем активный класс у всех
+            navLinks.forEach(l => l.classList.remove('active'));
+            // Добавляем активный класс текущему
+            link.classList.add('active');
+            
+            // Показываем нужную секцию
+            const targetId = link.getAttribute('href').substring(1);
+            const sections = document.querySelectorAll('.section');
+            
+            sections.forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            const targetSection = document.getElementById(targetId);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+            }
+            
+            // Скролл к секции
+            targetSection?.scrollIntoView({ behavior: 'smooth' });
+        });
+    });
+}
+
+// Инициализация при загрузке страницы
+document.addEventListener('DOMContentLoaded', () => {
+    updateFavoritesCount();
+    loadTrendingMovies();
+    loadTopRatedMovies();
+    loadUpcomingMovies();
+    setupGenreButtons();
+    setupThemeToggle();
+    setupNavigation();
+    
+    // Обновляем избранное каждые 5 секунд (на случай, если изменилось в другой вкладке)
+    setInterval(updateFavoritesCount, 5000);
+
+    // Добавь в конец app.js или home.js
+window.addEventListener('scroll', function() {
+    const searchSection = document.querySelector('.search-section');
+    if (window.scrollY > 100) {
+        searchSection.classList.add('sticky-scrolled');
+    } else {
+        searchSection.classList.remove('sticky-scrolled');
+    }
+});
+
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+STYLES.CSS
+
+
+/* /* * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+  }
+  
+  .container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  header {
+    background-color: #212121;
+    color: #fff;
+    padding: 15px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  
+  header h1 {
+    margin: 0;
+    display: inline-block;
+  }
+  
+  nav {
+    display: inline-block;
+    margin-left: 50px;
+    vertical-align: middle;
+  }
+  
+  .nav-links {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+  }
+  
+  .nav-links li {
+    margin-right: 20px;
+  }
+  
+  .nav-links a {
+    color: #fff;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  
+  .nav-links a:hover,
+  .nav-links a.active {
+    text-decoration: underline;
+  }
+  
+  #search-form {
+    display: inline-block;
+    margin-left: auto;
+    vertical-align: middle;
+  }
+  
+  #search-input {
+    padding: 5px 10px;
+    font-size: 1em;
+    border-radius: 4px 0 0 4px;
+    border: none;
+    outline: none;
+  }
+  
+  #search-form button {
+    padding: 5px 10px;
+    font-size: 1em;
+    border: none;
+    background-color: #ff3d00;
+    color: white;
+    border-radius: 0 4px 4px 0;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  
+  #search-form button:hover {
+    background-color: #e63600;
+  }
+  
+  main {
+    margin: 20px auto;
+  }
+  
+  #movies-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 15px;
+  }
+  
+  .movie-card {
+    background: white;
+    border-radius: 6px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform 0.3s;
+  }
+  
+  .movie-card:hover {
+    transform: scale(1.05);
+  }
+  
+  .movie-card img {
+    width: 100%;
+    display: block;
+  }
+  
+  .movie-info {
+    padding: 10px;
+  }
+  
+  .movie-info h3 {
+    margin: 10px 0 5px;
+    font-size: 1em;
+  }
+  
+  .mo
+  vie-info p {
+    margin: 0;
+    font-size: 0.9em;
+    color: #666;
+  }
+  
+  #movie-details {
+    background: white;
+    padding: 20px;
+    border-radius: 6px;
+  }
+  
+  .hidden {
+    display: none;
+  }
+  
+  #back-btn {
+    background: #212121;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    margin-bottom: 20px;
+    cursor: pointer;
+    border-radius: 4px;
+  } */
+
+  /* ===== БАЗОВЫЕ СТИЛИ ===== */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+  
+  body {
+    background: linear-gradient(135deg, #0f1419 0%, #1a1a2e 100%);
+    color: #e0e0e0;
+    min-height: 100vh;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+  
+  /* ===== ШАПКА ===== */
+  header {
+    background: rgba(15, 20, 30, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    padding: 1.5rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  header h1 {
+    color: #ffd700;
+    text-align: center;
+    font-size: 2.8rem;
+    margin-bottom: 1.5rem;
+    text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+    letter-spacing: 1px;
+  }
+  
+  /* ===== ФОРМА ПОИСКА ===== */
+  /* #search-form {
+    max-width: 700px;
+    margin: 0 auto;
+    display: flex;
+    gap: 10px;
+    
+  }
+  
+  #search-input {
+    flex: 1;
+    padding: 16px 20px;
+    font-size: 1.1rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 12px;
+    color: #f0f0f0;
+    transition: all 0.3s ease;
+  }
+  
+  #search-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+  
+  #search-input:focus {
+    outline: none;
+    border-color: #ffd700;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.2);
+  } */
+
+  /* Расширяем всю секцию поиска */
+.search-section {
+    width: 100%;
+    max-width: 2000px;  /* Увеличиваем максимальную ширину */
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Делаем форму на всю ширину */
+#search-form {
+    width: 100%;
+    max-width: 1200px;  /* Было 700px - увеличиваем */
+    margin: 0 auto;
+}
+
+/* Растягиваем search-box */
+.search-box {
+    display: flex;
+    align-items: center;
+    width: 100%;  /* Добавляем ширину 100% */
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 15px;
+    padding: 5px;
+}
+
+/* Растягиваем input на всю доступную ширину */
+#search-input {
+    flex: 1 1 auto;  /* Позволяем input расти */
+    min-width: 200px;  /* Минимальная ширина */
+    width: 100%;  /* На всю ширину */
+    padding: 16px 20px;
+    background: transparent;
+    border: none;
+    color: #fff;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.search-section {
+    position: sticky;
+    top: 100px; /* Высота шапки */
+    z-index: 99;
+}
+
+.main-nav {
+    position: sticky;
+    top: 180px; /* Высота шапки + search-section */
+    z-index: 98;
+}
+
+
+
+
+
+
+
+
+
+/* Делаем поисковую секцию липкой */
+.search-section {
+    background: rgba(20, 25, 40, 0.95);
+    padding: 2rem;
+    border-top: 1px solid rgba(255, 215, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    
+    /* Добавляем sticky */
+    position: sticky;
+    top: 0;
+    z-index: 99;
+    backdrop-filter: blur(10px); /* Размытие фона */
+    
+    /* Анимация при появлении */
+    transition: all 0.3s ease;
+}
+
+/* Когда страница прокручена, делаем немного меньше */
+.search-section.sticky-scrolled {
+    padding: 1rem 2rem;
+    background: rgba(20, 25, 40, 0.98);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Адаптация шапки */
+header {
+    background: rgba(15, 20, 30, 0.85);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    padding: 1.5rem 2rem;
+    position: sticky;
+    top: 0;
+    z-index: 100; /* Выше чем search-section */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Навигация тоже делаем липкой */
+.main-nav {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 1.2rem;
+    background: rgba(15, 20, 30, 0.8);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+    
+    /* Добавляем sticky */
+    position: sticky;
+    top: 80px; /* Высота шапки + search-section */
+    z-index: 98;
+    backdrop-filter: blur(5px);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* МАКСИМАЛЬНО УНИВЕРСАЛЬНЫЙ КОД - центрирует всё подряд */
+.movie-card *,
+.film-card *,
+[class*="movie"] *,
+[class*="film"] * {
+    text-align: center;
+}
+
+.movie-card .movie-info,
+.movie-card .film-info,
+.movie-card > div > div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.movie-card h3,
+.movie-card p,
+.movie-card span,
+.movie-card div:not(.movie-poster):not(.film-poster) {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Специально для года и жанра */
+.movie-card [class*="year"],
+.movie-card [class*="genre"],
+.movie-card [class*="meta"] {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 10px;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* ===== СТИЛИ ДЛЯ СТРАНИЦЫ ДЕТАЛЕЙ ФИЛЬМА ===== */
+
+/* Основной контейнер страницы деталей */
+.movie-details {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Контейнер с постером и информацией */
+.details-container {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    background: rgba(30, 35, 45, 0.7);
+    border-radius: 20px;
+    padding: 30px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+/* Секция с постером */
+.poster-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.detail-poster {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    border: 2px solid rgba(255, 215, 0, 0.2);
+    transition: transform 0.3s;
+}
+
+.detail-poster:hover {
+    transform: scale(1.02);
+    border-color: rgba(255, 215, 0, 0.5);
+}
+
+/* Мета-информация под постером */
+.movie-meta {
+    width: 100%;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.movie-meta > div {
+    margin: 10px 0;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 3px solid #ffd700;
+}
+
+.rating {
+    font-size: 1.2rem;
+    color: #ffd700;
+}
+
+.year, .genre, .runtime {
+    font-size: 1rem;
+    color: #e0e0e0;
+}
+
+/* Секция с информацией */
+.info-section {
+    flex: 1;
+}
+
+.overview {
+    margin-bottom: 30px;
+}
+
+.overview h2 {
+    color: #ffd700;
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+    border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+    padding-bottom: 10px;
+}
+
+#detail-overview {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: #e0e0e0;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 20px;
+    border-radius: 12px;
+}
+
+/* Сетка деталей */
+.details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.detail-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    border-left: 4px solid #ffd700;
+    transition: transform 0.3s;
+}
+
+.detail-item:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.detail-item h3 {
+    color: #ffd700;
+    margin-bottom: 10px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detail-item p {
+    color: #e0e0e0;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* Кнопка "Назад" */
+.back-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffd700;
+    text-decoration: none;
+    font-size: 1.1rem;
+    padding: 10px 20px;
+    background: rgba(255, 215, 0, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    margin-bottom: 20px;
+    transition: all 0.3s;
+}
+
+.back-button:hover {
+    background: rgba(255, 215, 0, 0.2);
+    transform: translateX(-5px);
+}
+
+/* Заголовок фильма */
+#movie-title {
+    color: #ffd700;
+    font-size: 2.5rem;
+    margin-bottom: 30px;
+    text-align: center;
+    text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3);
+}
+
+/* ===== СТИЛИ ДЛЯ ТРЕЙЛЕРОВ НА СТРАНИЦЕ ДЕТАЛЕЙ ===== */
+
+/* Переопределяем стили для trailer-section на странице деталей */
+.movie-details .trailer-section {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.movie-details #trailer-container {
+    background: rgba(30, 35, 45, 0.7);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* Специальные стили для поисковой строки на странице деталей */
+.movie-details .trailer-search {
+    margin-bottom: 30px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.movie-details .search-box {
+    display: flex;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 15px;
+    padding: 5px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.movie-details #trailer-search-input {
+    flex: 1;
+    padding: 15px 20px;
+    background: transparent;
+    border: none;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+}
+
+.movie-details #search-trailer-btn {
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+/* Центрируем видео-рекомендации */
+.movie-details .video-suggestions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    max-width: 900px;
+    margin: 20px auto;
+}
+
+.movie-details .video-suggestion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #e0e0e0;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+/* Центрируем заголовки */
+.movie-details .trailer-section h2,
+.movie-details .recommended-videos h3 {
+    text-align: center;
+}
+
+/* Центрируем ссылку на YouTube */
+.movie-details .youtube-direct-link {
+    text-align: center;
+    margin-top: 30px;
+}
+
+/* ===== АДАПТИВНОСТЬ ДЛЯ СТРАНИЦЫ ДЕТАЛЕЙ ===== */
+@media (max-width: 768px) {
+    .details-container {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+    
+    .poster-section {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+    
+    .detail-poster {
+        max-width: 250px;
+    }
+    
+    #movie-title {
+        font-size: 2rem;
+    }
+    
+    .movie-details .search-box {
+        flex-direction: column;
+    }
+    
+    .movie-details #search-trailer-btn {
+        width: 100%;
+    }
+    
+    .movie-details .video-suggestions {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    #movie-title {
+        font-size: 1.5rem;
+    }
+}
+
+/* Чтобы кнопка не сжималась */
+.search-btn {
+    flex: 0 0 auto;  /* Кнопка не будет сжиматься */
+    white-space: nowrap;  /* Текст не переносится */
+}
+  
+  button[type="submit"] {
+    padding: 16px 32px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    color: #0f1419;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    min-width: 120px;
+  }
+  
+  button[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+    background: linear-gradient(135deg, #ffed4e 0%, #ffc107 100%);
+  }
+  
+  button[type="submit"]:active {
+    transform: translateY(0);
+  }
+  
+  /* ===== КОНТЕЙНЕР ФИЛЬМОВ ===== */
+  .movies-grid {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 2rem;
+  }
+  
+  /* ===== КАРТОЧКА ФИЛЬМА (для будущего JS) ===== */
+  .movie-card {
+    background: rgba(30, 35, 45, 0.7);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid rgba(255, 215, 0, 0.1);
+    position: relative;
+    backdrop-filter: blur(5px);
+  }
+  
+  .movie-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    border-color: rgba(255, 215, 0, 0.4);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.5), 
+                0 0 0 1px rgba(255, 215, 0, 0.2);
+  }
+  
+  .movie-poster {
+    width: 100%;
+    height: 380px;
+    object-fit: cover;
+    display: block;
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+    align-items: center;
+  }
+  
+  .movie-info {
+    padding: 1.5rem;
+  }
+  
+  .movie-title {
+    color: #ffffff;
+    font-size: 1.3rem;
+    margin-bottom: 0.8rem;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+  
+  .movie-year {
+    color: #ffd700;
+    font-size: 1rem;
+    font-weight: 500;
+    background: rgba(255, 215, 0, 0.1);
+    padding: 4px 12px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 1rem;
+  }
+  
+  .movie-overview {
+    color: #b0b0b0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* ===== ЗАГРУЗОЧНЫЙ ИНДИКАТОР ===== */
+  .loading {
+    text-align: center;
+    padding: 3rem;
+    color: #ffd700;
+    font-size: 1.2rem;
+  }
+  
+  /* ===== АДАПТИВНОСТЬ ===== */
+  @media (max-width: 768px) {
+    header {
+        padding: 1rem;
+    }
+    
+    header h1 {
+        font-size: 2.2rem;
+    }
+    
+    #search-form {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    button[type="submit"] {
+        width: 100%;
+    }
+    
+    .movies-grid {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+        padding: 0 15px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .movies-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .movie-poster {
+        height: 320px;
+    }
+  }
+  
+  /* ===== АНИМАЦИЯ ПОЯВЛЕНИЯ ===== */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+  .movie-card {
+    animation: fadeIn 0.5s ease forwards;
+  }
+  
+  
+  
+  
+  /* ===== КНОПКИ ИЗБРАННОГО ===== */
+  .card-fav-btn {
+    position: absolute;
+    top: 15px;
+    right: 250px;
+    background: rgba(0, 0, 0, 0.7);
+    border: 2px solid rgba(255, 215, 0, 0.5);
+    color: #ffd700;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 10;
+  }
+  
+  .card-fav-btn:hover {
+    background: rgba(255, 215, 0, 0.9);
+    color: #000;
+    transform: scale(1.1);
+  }
+  
+  .card-fav-btn.active {
+    background: #ffd700;
+    color: #000;
+    border-color: #ffd700;
+  }
+  
+  .favorite-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 10px;
+  }
+  
+  .favorite-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+  }
+  
+  .favorite-btn.active {
+    background: linear-gradient(135deg, #333 0%, #666 100%);
+    color: #ffd700;
+  }
+  
+  /* ===== СЕТКА ДЕТАЛЕЙ ===== */
+  .details-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+    align-items: center;
+  }
+  
+  .detail-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.2rem;
+    border-left: 4px solid #ffd700;
+    align-items: center;
+  }
+  
+  .detail-item h3 {
+    color: #ffd700;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    align-items: center;
+  }
+  
+  .detail-item p {
+    color: #d0d0d0;
+    line-height: 1.5;
+  }
+  
+  /* ===== МИКСИНЫ ДЛЯ КАРТОЧЕК ===== */
+  .movie-type {
+    color: #00c3ff;
+    font-size: 0.9rem;
+    padding: 4px 12px;
+    background: rgba(0, 195, 255, 0.1);
+    border-radius: 20px;
+    display: inline-block;
+    margin: 5px 0;
+  }
+  
+  .movie-card {
+    position: relative;
+    display: block;
+  }
+  
+  .loading {
+    text-align: center;
+    font-size: 1.3rem;
+    color: #ffd700;
+    padding: 3rem;
+  }
+  
+  .error {
+    text-align: center;
+    color: #ff6b6b;
+    padding: 2rem;
+    font-size: 1.2rem;
+  }
+  
+  /* ===== МЕДИА-ЗАПРОСЫ ===== */
+  @media (max-width: 768px) {
+    .details-grid {
+        grid-template-columns: 1fr;
+    }
+  }
+  
+  
+  
+  /* ===== ШАПКА С КОНТРОЛЯМИ ===== */
+  .header-controls {
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  
+  .favorites-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffd700;
+    text-decoration: none;
+    font-size: 1.1rem;
+    padding: 10px 20px;
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 10px;
+    transition: all 0.3s;
+    white-space: nowrap;
+  }
+  
+  .favorites-link:hover {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: #ffd700;
+    transform: translateY(-2px);
+  }
+  
+  .fav-count {
+    background: #ffd700;
+    color: #000;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    font-weight: bold;
+  }
+  
+  /* ===== СТРАНИЦА ИЗБРАННОГО ===== */
+  .favorites-page {
+    max-width: 1400px;
+    margin: 2rem auto;
+    padding: 0 20px;
+  }
+  
+  .favorites-count {
+    text-align: center;
+    color: #ffd700;
+    font-size: 1.2rem;
+    margin-top: 10px;
+  }
+  
+  .favorites-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin: 2rem 0;
+    padding: 20px;
+    background: rgba(30, 35, 45, 0.7);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+  }
+  
+  .clear-btn, .sort-btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 500;
+  }
+  
+  .clear-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
+    color: white;
+  }
+  
+  .clear-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.4);
+  }
+  
+  .sort-btn {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e0e0e0;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+  }
+  
+  .sort-btn:hover {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: #ffd700;
+    transform: translateY(-2px);
+  }
+  
+  /* ===== СОСТОЯНИЕ ПУСТОГО СПИСКА ===== */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: rgba(30, 35, 45, 0.7);
+    border-radius: 20px;
+    border: 2px dashed rgba(255, 215, 0, 0.3);
+    margin: 3rem auto;
+    max-width: 600px;
+  }
+  
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    color: #ffd700;
+  }
+  
+  .empty-state h2 {
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+  }
+  
+  .empty-state p {
+    color: #b0b0b0;
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+  
+  .cta-button {
+    display: inline-block;
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    color: #000;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s;
+  }
+  
+  .cta-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 215, 0, 0.4);
+  }
+  
+  /* ===== КАРТОЧКА ИЗБРАННОГО С КНОПКОЙ УДАЛЕНИЯ ===== */
+  .favorite-card {
+    position: relative;
+  }
+  
+  .remove-favorite {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: rgba(255, 107, 107, 0.9);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .remove-favorite:hover {
+    background: #ff4757;
+    transform: scale(1.1);
+  }
+  
+  /* ===== ИНДИКАТОР ИЗБРАННОГО ===== */
+  .favorite-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #ffd700;
+    color: #000;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    z-index: 10;
+  }
+  
+  /* ===== СЧЕТЧИК В ШАПКЕ ГЛАВНОЙ СТРАНИЦЫ ===== */
+  .fav-count-update {
+    animation: pulse 0.5s ease;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+  }
+  
+  
+  /* ===== НОВЫЕ ЭЛЕМЕНТЫ ДЛЯ ГЛАВНОЙ СТРАНИЦЫ ===== */
+  
+  /* Шапка */
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background: rgba(15, 20, 30, 0.9);
+  }
+  
+  .logo h1 {
+    color: #ffd700;
+    margin: 0;
+    font-size: 2.2rem;
+  }
+  
+  .tagline {
+    color: #b0b0b0;
+    margin: 5px 0 0 0;
+    font-size: 1rem;
+  }
+  
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .theme-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    color: #ffd700;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s;
+  }
+  
+  .theme-btn:hover {
+    background: rgba(255, 215, 0, 0.1);
+    transform: rotate(30deg);
+  }
+  
+  /* Поисковая секция */
+  .search-section {
+    background: rgba(20, 25, 40, 0.8);
+    padding: 2rem;
+    border-top: 1px solid rgba(255, 215, 0, 0.2);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+  }
+  
+  .search-box {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 15px;
+    padding: 5px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .search-icon {
+    color: #ffd700;
+    font-size: 1.2rem;
+    margin: 0 15px;
+  }
+  
+  #search-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    padding: 18px 10px;
+    font-size: 1.1rem;
+    color: #fff;
+    outline: none;
+  }
+  
+  .search-btn {
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    color: #000;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+  }
+  
+  .search-filters {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 15px;
+  }
+  
+  .filter-option {
+    color: #b0b0b0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .filter-option input {
+    accent-color: #ffd700;
+  }
+  
+  /* Навигация */
+  .main-nav {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 1.2rem;
+    background: rgba(15, 20, 30, 0.8);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.1);
+  }
+  
+  .nav-link {
+    color: #b0b0b0;
+    text-decoration: none;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 10px;
+    transition: all 0.3s;
+  }
+  
+  .nav-link:hover, .nav-link.active {
+    color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+  }
+  
+  /* Секции */
+  .section {
+    max-width: 1400px;
+    margin: 3rem auto;
+    padding: 0 20px;
+  }
+  
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+  
+  .section-header h2 {
+    color: #fff;
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .see-all {
+    color: #ffd700;
+    text-decoration: none;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.3s;
+  }
+  
+  .see-all:hover {
+    gap: 10px;
+  }
+  
+  /* Сетка жанров */
+  .genres-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 1rem;
+  }
+  
+  .genre-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 215, 0, 0.2);
+    color: #e0e0e0;
+    padding: 15px;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: center;
+  }
+  
+  .genre-btn:hover {
+    background: rgba(255, 215, 0, 0.1);
+    border-color: #ffd700;
+    transform: translateY(-3px);
+  }
+  
+  /* Инфо-бокс */
+  .info-box {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    max-width: 1400px;
+    margin: 4rem auto;
+    padding: 0 20px;
+  }
+  
+  .info-card {
+    background: rgba(30, 35, 45, 0.7);
+    padding: 2rem;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+    transition: all 0.3s;
+  }
+  
+  .info-card:hover {
+    border-color: #ffd700;
+    transform: translateY(-5px);
+  }
+  
+  .info-card i {
+    font-size: 2.5rem;
+    color: #ffd700;
+    margin-bottom: 1rem;
+  }
+  
+  .info-card h3 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+  
+  .info-card p {
+    color: #b0b0b0;
+    line-height: 1.5;
+  }
+  
+  /* Подвал */
+  footer {
+    background: rgba(10, 15, 25, 0.95);
+    margin-top: 4rem;
+    padding: 3rem 20px 1.5rem;
+    border-top: 1px solid rgba(255, 215, 0, 0.2);
+  }
+  
+  .footer-content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 3rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .footer-section h3 {
+    color: #ffd700;
+    margin-bottom: 1.5rem;
+    font-size: 1.3rem;
+  }
+  
+  .footer-section p {
+    color: #b0b0b0;
+    line-height: 1.6;
+  }
+  
+  .footer-section a {
+    display: block;
+    color: #b0b0b0;
+    text-decoration: none;
+    margin-bottom: 10px;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .footer-section a:hover {
+    color: #ffd700;
+    transform: translateX(5px);
+  }
+  
+  .footer-bottom {
+    text-align: center;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: #888;
+    font-size: 0.9rem;
+  }
+  
+  /* Бейджи */
+  .soon-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #00c3ff;
+    color: #000;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    z-index: 5;
+  }
+  
+  .movie-rating {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(0, 0, 0, 0.8);
+    color: #ffd700;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .movie-genre {
+    background: rgba(255, 215, 0, 0.1);
+    color: #ffd700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-top: 10px;
+    font-size: 0.9rem;
+  }
+  
+  /* Уведомления */
+  .notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    color: #000;
+    padding: 15px 25px;
+    border-radius: 10px;
+    font-weight: 500;
+    z-index: 1000;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .notification.show {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  
+  /* Светлая тема */
+  .light-theme {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: #333;
+  }
+  
+  .light-theme header {
+    background: rgba(255, 255, 255, 0.95);
+  }
+  
+  .light-theme .movie-card {
+    background: white;
+    color: #333;
+  }
+  
+  .light-theme .movie-title {
+    color: #333;
+  }
+  
+  .light-theme .nav-link {
+    color: #666;
+  }
+  
+  .light-theme .nav-link.active {
+    color: #ff9800;
+  }
+  
+  /* Адаптивность */
+  @media (max-width: 768px) {
+    .header-top {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .main-nav {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .search-box {
+        flex-direction: column;
+        background: transparent;
+        border: none;
+    }
+    
+    #search-input {
+        width: 100%;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        margin-bottom: 10px;
+    }
+    
+    .search-btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .genres-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .genres-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+  }
+  /* ===== СЕКЦИЯ ТРЕЙЛЕРОВ (БЕЗ API) ===== */
+  .trailer-section {
+    max-width: 1200px;
+    margin: 3rem auto;
+    padding: 0 20px;
+  }
+  
+  .trailer-section h2 {
+    color: #fff;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .trailer-section h2 i {
+    color: #ff0000;
+  }
+  
+  #trailer-container {
+    background: rgba(30, 35, 45, 0.7);
+    border-radius: 20px;
+    padding: 2rem;
+    border: 1px solid rgba(255, 0, 0, 0.3);
+  }
+  
+  /* Контейнер плеера */
+  .youtube-player-container {
+    position: relative;
+    width: 100%;
+    height: 0;
+    padding-bottom: 56.25%; /* 16:9 соотношение */
+    margin-bottom: 2rem;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  
+  .player-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    color: #666;
+  }
+  
+  .placeholder-content {
+    text-align: center;
+  }
+  
+  .placeholder-content i {
+    font-size: 4rem;
+    color: #ff0000;
+    margin-bottom: 1rem;
+  }
+  
+  .placeholder-content p {
+    font-size: 1.2rem;
+    color: #888;
+  }
+  
+  #youtube-iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: none;
+  }
+  
+  /* Поисковая строка */
+  .trailer-search {
+    margin-bottom: 2rem;
+  }
+  
+  .search-box {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  
+  #trailer-search-input {
+    flex: 1;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 12px;
+    color: #fff;
+    font-size: 1rem;
+    outline: none;
+  }
+  
+  #trailer-search-input:focus {
+    border-color: #ff0000;
+  }
+  
+  #search-trailer-btn {
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #ff0000 0%, #cc0000 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  #search-trailer-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 0, 0, 0.3);
+  }
+  
+  .search-hint {
+    color: #888;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 10px;
+  }
+  
+  /* Рекомендуемые видео */
+  .recommended-videos h3 {
+    color: #fff;
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .video-suggestions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 2rem;
+  }
+  
+  .video-suggestion {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #e0e0e0;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-align: left;
+  }
+  
+  .video-suggestion i {
+    color: #ff0000;
+    font-size: 1.2rem;
+    min-width: 24px;
+  }
+  
+  .video-suggestion:hover {
+    background: rgba(255, 0, 0, 0.1);
+    border-color: #ff0000;
+    transform: translateY(-3px);
+  }
+  
+  /* Ссылка на YouTube */
+  .youtube-direct-link {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .youtube-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 30px;
+    background: #ff0000;
+    color: white;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s;
+  }
+  
+  .youtube-link:hover {
+    background: #cc0000;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 0, 0, 0.3);
+  }
+  
+  .youtube-link i {
+    font-size: 1.3rem;
+  }
+  
+  /* ===== АДАПТИВНОСТЬ ===== */
+  @media (max-width: 768px) {
+    .trailer-section {
+        padding: 0 15px;
+    }
+    
+    #trailer-container {
+        padding: 1.5rem;
+    }
+    
+    .search-box {
+        flex-direction: column;
+    }
+    
+    .video-suggestions {
+        grid-template-columns: 1fr;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .trailer-section h2 {
+        font-size: 1.7rem;
+    }
+    
+    .youtube-link {
+        width: 100%;
+        justify-content: center;
+    }
+  }
+  /* ===== ТРЕЙЛЕРЫ (КЛИКАБЕЛЬНЫЕ КНОПКИ) ===== */
+  .trailer-main {
+    background: rgba(20, 25, 40, 0.8);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 0, 0, 0.2);
+  }
+  
+  .trailer-preview {
+    display: flex;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    align-items: center;
+  }
+  
+  .preview-image {
+    position: relative;
+    flex-shrink: 0;
+    width: 320px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  }
+  
+  .youtube-thumbnail {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s;
+  }
+  
+  .trailer-preview:hover .youtube-thumbnail {
+    transform: scale(1.05);
+  }
+  
+  .play-button-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.8;
+    transition: opacity 0.3s;
+  }
+  
+  .play-button-overlay i {
+    font-size: 4rem;
+    color: #ff0000;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  }
+  
+  .trailer-preview:hover .play-button-overlay {
+    opacity: 1;
+  }
+  
+  .preview-info {
+    flex: 1;
+  }
+  
+  .preview-info h3 {
+    color: #fff;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+  
+  .preview-info p {
+    color: #b0b0b0;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+  }
+  
+  .video-stats {
+    display: flex;
+    gap: 2rem;
+    color: #888;
+  }
+  
+  .video-stats span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .video-stats i {
+    color: #ff0000;
+  }
+  
+  /* Кнопки действий */
+  .trailer-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 25px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #e0e0e0;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    transition: all 0.3s;
+  }
+  
+  .action-btn:hover {
+    background: rgba(255, 0, 0, 0.1);
+    border-color: #ff0000;
+    transform: translateY(-3px);
+    color: #fff;
+  }
+  
+  .action-btn.primary {
+    background: #ff0000;
+    border-color: #ff0000;
+    color: white;
+    font-weight: 600;
+  }
+  
+  .action-btn.primary:hover {
+    background: #cc0000;
+    border-color: #cc0000;
+  }
+  
+  /* Сетка предложений */
+  .suggestion-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin: 1.5rem 0 3rem;
+  }
+  
+  .suggestion-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s;
+    display: block;
+  }
+  
+  .suggestion-card:hover {
+    background: rgba(255, 0, 0, 0.1);
+    border-color: #ff0000;
+    transform: translateY(-5px);
+  }
+  
+  .suggestion-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 0, 0, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+  
+  .suggestion-icon i {
+    font-size: 1.5rem;
+    color: #ff0000;
+  }
+  
+  .suggestion-card h4 {
+    color: #fff;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .suggestion-card p {
+    color: #b0b0b0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+  
+  /* Советы */
+  .youtube-tips {
+    background: rgba(255, 215, 0, 0.05);
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    border-radius: 15px;
+    padding: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .youtube-tips h3 {
+    color: #ffd700;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .tips-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .tip-number {
+    background: #ffd700;
+    color: #000;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    flex-shrink: 0;
+    font-size: 1rem;
+  }
+  
+  .tip p {
+    color: #e0e0e0;
+    margin: 0;
+    line-height: 1.5;
+  }
+  
+  /* ===== АДАПТИВНОСТЬ ===== */
+  @media (max-width: 900px) {
+    .trailer-preview {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .preview-image {
+        width: 100%;
+        max-width: 500px;
+    }
+    
+    .youtube-thumbnail {
+        height: 250px;
+    }
+    
+    .video-stats {
+        justify-content: center;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .trailer-actions {
+        flex-direction: column;
+    }
+    
+    .action-btn {
+        justify-content: center;
+        text-align: center;
+    }
+    
+    .suggestion-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tips-list {
+        grid-template-columns: 1fr;
+    }
+  }
+   
+
+  /* Стили для актёров */
+.actors-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.actor-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px;
+    background: #f0f0f0;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.actor-item:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+/* Стили для всплывающей карточки с фото */
+.actor-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 10px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    padding: 10px;
+    z-index: 1000;
+    min-width: 120px;
+    text-align: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.actor-item:hover .actor-tooltip {
+    opacity: 1;
+    visibility: visible;
+    bottom: calc(100% + 10px);
+}
+
+.actor-tooltip img {
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 50%;
+    margin-bottom: 8px;
+    border: 3px solid #ffd700;
+}
+
+.actor-tooltip .actor-name {
+    font-weight: bold;
+    font-size: 12px;
+    color: #333;
+    margin-top: 5px;
+}
+
+/* Стрелочка подсказки */
+.actor-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: white transparent transparent transparent;
+}
+
+
+
+
+/* Стили для активной кнопки жанра */
+.genre-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Анимация загрузки */
+.loading-spinner {
+    text-align: center;
+    padding: 40px;
+    font-size: 20px;
+    color: #667eea;
+}
+
+.loading-spinner i {
+    margin-right: 10px;
+}
+
+/* Сообщение об информации */
+.info-message {
+    text-align: center;
+    padding: 40px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin: 20px;
+}
+
+.info-message i {
+    font-size: 48px;
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.info-message h3 {
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.info-message p {
+    color: #666;
+    margin: 5px 0;
+}
+
+.test-btn {
+    margin-top: 15px;
+    padding: 10px 20px;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.test-btn:hover {
+    background: #764ba2;
+    transform: translateY(-2px);
+}
+
+/* Результаты поиска */
+.no-results {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.no-results i {
+    font-size: 48px;
+    margin-bottom: 15px;
+    color: #999;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+index.html
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Кинопортал - поиск фильмов и сериалов</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Шапка -->
+    <header>
+        <div class="header-top">
+            <div class="logo">
+                <h1><i class="fas fa-film"></i> CineMate</h1>
+                <p class="tagline">Найди свой идеальный фильм</p>
+            </div>
+            <div class="header-right">
+                <a href="favorites.html" class="favorites-link">
+                    <i class="fas fa-star"></i> Избранное 
+                    <span id="fav-count" class="fav-count">0</span>
+                </a>
+                <button id="theme-toggle" class="theme-btn" title="Сменить тему">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="search-section">
+            <form id="search-form">
+                <div class="search-box">
+                    <i class="fas fa-search search-icon"></i>
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        placeholder="Введите название фильма, сериала или актера..." 
+                        required>
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i> Найти
+                    </button>
+                </div>
+                <div class="search-filters">
+                    <label class="filter-option">
+                        <input type="radio" name="type" value="" checked> Все
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="type" value="movie"> Фильмы
+                    </label>
+                    <label class="filter-option">
+                        <input type="radio" name="type" value="series"> Сериалы
+                    </label>
+                </div>
+            </form>
+        </div>
+        
+        <nav class="main-nav">
+            <a href="#trending" class="nav-link active"><i class="fas fa-fire"></i> В тренде</a>
+            <a href="#top-rated" class="nav-link"><i class="fas fa-crown"></i> Топ рейтинга</a>
+            <a href="#upcoming" class="nav-link"><i class="fas fa-calendar-alt"></i> Скоро выйдут</a>
+            <a href="#genres" class="nav-link"><i class="fas fa-tags"></i> Жанры</a>
+        </nav>
+    </header>
+
+    <!-- Основной контент -->
+    <main>
+        <!-- Секция "В тренде" -->
+        <section id="trending" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-fire"></i> Популярные сейчас</h2>
+                <a href="#" class="see-all">Смотреть все <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div id="trending-movies" class="movies-grid">
+                <!-- Трендовые фильмы загрузятся через JS -->
+            </div>
+        </section>
+
+        <!-- Секция "Топ рейтинга" -->
+        <section id="top-rated" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-crown"></i> Лучшие по рейтингу</h2>
+                <a href="#" class="see-all">Смотреть все <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div id="top-rated-movies" class="movies-grid">
+                <!-- Фильмы с высоким рейтингом -->
+            </div>
+        </section>
+
+        <!-- Секция "Скоро выйдут" -->
+        <section id="upcoming" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-calendar-alt"></i> Скоро в кино</h2>
+                <a href="#" class="see-all">Смотреть все <i class="fas fa-arrow-right"></i></a>
+            </div>
+            <div id="upcoming-movies" class="movies-grid">
+                <!-- Предстоящие фильмы -->
+            </div>
+        </section>
+
+        <!-- Секция жанров -->
+        <section id="genres" class="section">
+            <div class="section-header">
+                <h2><i class="fas fa-tags"></i> Выберите жанр</h2>
+            </div>
+            <div class="genres-grid">
+                <button class="genre-btn" data-genre="action">🎬 Боевик</button>
+                <button class="genre-btn" data-genre="comedy">😂 Комедия</button>
+                <button class="genre-btn" data-genre="drama">🎭 Драма</button>
+                <button class="genre-btn" data-genre="horror">👻 Ужасы</button>
+                <button class="genre-btn" data-genre="sci-fi">🚀 Фантастика</button>
+                <button class="genre-btn" data-genre="fantasy">🐉 Фэнтези</button>
+                <button class="genre-btn" data-genre="thriller">🔪 Триллер</button>
+                <button class="genre-btn" data-genre="romance">❤️ Романтика</button>
+                <button class="genre-btn" data-genre="animation">🐭 Мультфильм</button>
+                <button class="genre-btn" data-genre="mystery">🕵️‍♂️ Детектив</button>
+            </div>
+        </section>
+
+        <!-- Секция поиска (результаты появятся здесь) -->
+        <section id="search-results" class="section" style="display: none;">
+            <div class="section-header">
+                <h2><i class="fas fa-search"></i> Результаты поиска</h2>
+                <span id="results-count" class="results-count">Найдено: 0</span>
+            </div>
+            <div id="movies-container" class="movies-grid">
+                <!-- Результаты поиска -->
+            </div>
+        </section>
+
+        <!-- Информационный блок -->
+        <div class="info-box">
+            <div class="info-card">
+                <i class="fas fa-database"></i>
+                <h3>База фильмов</h3>
+                <p>Более 500,000 фильмов и сериалов</p>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-star"></i>
+                <h3>Рейтинги</h3>
+                <p>Актуальные оценки IMDb и кинокритиков</p>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-video"></i>
+                <h3>Трейлеры</h3>
+                <p>Смотрите официальные трейлеры</p>
+            </div>
+            <div class="info-card">
+                <i class="fas fa-mobile-alt"></i>
+                <h3>На всех устройствах</h3>
+                <p>Совместимость с любым гаджетом</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-film"></i> Кинопортал</h3>
+                <p>Лучший сайт для поиска информации о фильмах и сериалах. Актуальные рейтинги, описания и новости.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Быстрые ссылки</h3>
+                <a href="index.html"><i class="fas fa-home"></i> Главная</a>
+                <a href="favorites.html"><i class="fas fa-star"></i> Избранное</a>
+                <a href="#trending"><i class="fas fa-fire"></i> В тренде</a>
+                <a href="#top-rated"><i class="fas fa-crown"></i> Топ рейтинга</a>
+            </div>
+            <div class="footer-section">
+                <h3>Поддержка</h3>
+                <a href="#"><i class="fas fa-question-circle"></i> Помощь</a>
+                <a href="#"><i class="fas fa-envelope"></i> Контакты</a>
+                <a href="#"><i class="fas fa-shield-alt"></i> Конфиденциальность</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Кинопортал. Используется OMDb API.Наслаждайтесь просмотром.</p>
+        </div>
+    </footer>
+
+    <!-- Скрипты -->
+    <script src="app.js" type="module"></script>
+    <script src="home.js" type="module"></script>
+</body>
+</html>
+
+
