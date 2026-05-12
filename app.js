@@ -310,6 +310,144 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     setInterval(updateFavoritesCount, 5000);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // ========== ПОИСК АКТЕРОВ ==========
+
+// Функция поиска фильмов по актеру
+async function searchByActor(actorName, language = 'en') {
+    console.log('Поиск актера:', actorName);
+    
+    const resultsSection = document.getElementById('search-results');
+    const resultsContainer = document.getElementById('movies-container');
+    const resultsCount = document.getElementById('results-count');
+    
+    if (resultsSection) {
+        resultsSection.style.display = 'block';
+        document.querySelectorAll('.section:not(#search-results)').forEach(section => {
+            section.style.display = 'none';
+        });
+    }
+    
+    if (resultsContainer) {
+        resultsContainer.innerHTML = '<div class="loading"><i class="fas fa-spinner fa-spin"></i> Поиск фильмов с участием актера...</div>';
+    }
+    
+    try {
+        // Ищем фильмы с участием актера через OMDb API
+        // Используем параметр s для поиска по названию, а затем фильтруем по актерам
+        const url = `https://www.omdbapi.com/?apikey=${API_KEY}&s=${encodeURIComponent(actorName)}&type=movie&page=1`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.Response === 'False') {
+            if (resultsContainer) {
+                resultsContainer.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-user-slash"></i>
+                        <p>По запросу "${actorName}" ничего не найдено</p>
+                        <p style="font-size: 14px; margin-top: 10px;">Попробуйте:</p>
+                        <ul style="text-align: left; display: inline-block;">
+                            <li>Проверить правильность написания имени</li>
+                            <li>Ввести имя актера на английском (например: "Brad Pitt")</li>
+                            <li>Использовать полное имя актера</li>
+                        </ul>
+                    </div>
+                `;
+            }
+            if (resultsCount) resultsCount.textContent = 'Найдено: 0';
+            return;
+        }
+        
+        // Получаем детальную информацию для каждого фильма и фильтруем по актеру
+        const moviesWithActor = [];
+        
+        for (const movie of data.Search.slice(0, 20)) {
+            const detailResponse = await fetch(`https://www.omdbapi.com/?apikey=${API_KEY}&i=${movie.imdbID}`);
+            const detail = await detailResponse.json();
+            
+            // Проверяем, есть ли искомый актер в списке актеров (без учета регистра)
+            if (detail.Response === 'True' && detail.Actors) {
+                const actorsLower = detail.Actors.toLowerCase();
+                const actorLower = actorName.toLowerCase();
+                
+                if (actorsLower.includes(actorLower)) {
+                    moviesWithActor.push(detail);
+                }
+            }
+            
+            // Небольшая задержка, чтобы не перегружать API
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        if (moviesWithActor.length === 0) {
+            if (resultsContainer) {
+                resultsContainer.innerHTML = `
+                    <div class="error">
+                        <i class="fas fa-user-slash"></i>
+                        <p>Фильмы с участием "${actorName}" не найдены</p>
+                        <p style="font-size: 14px; margin-top: 10px;">Возможно, актер не снимался в популярных фильмах, или имя введено неточно</p>
+                    </div>
+                `;
+            }
+            if (resultsCount) resultsCount.textContent = 'Найдено: 0';
+            return;
+        }
+        
+        if (resultsCount) resultsCount.textContent = `Найдено фильмов с участием: ${moviesWithActor.length}`;
+        if (resultsContainer) {
+            resultsContainer.innerHTML = '';
+            moviesWithActor.forEach(movie => {
+                // Добавляем информацию об актере в карточку
+                const card = createMovieCard(movie);
+                // Находим имена актеров и добавляем их в карточку
+                const actorInfo = document.createElement('div');
+                actorInfo.className = 'movie-actors';
+                actorInfo.style.cssText = 'font-size: 0.8rem; color: #ffd700; margin-top: 5px; word-break: break-word;';
+                const actorsList = movie.Actors ? movie.Actors.split(',').slice(0, 2).join(',') : 'Актеры не указаны';
+                actorInfo.innerHTML = `<i class="fas fa-user"></i> ${actorsList}${movie.Actors && movie.Actors.split(',').length > 2 ? '...' : ''}`;
+                card.querySelector('.movie-info').appendChild(actorInfo);
+                resultsContainer.appendChild(card);
+            });
+        }
+        
+    } catch (error) {
+        console.error('Ошибка поиска актера:', error);
+        if (resultsContainer) {
+            resultsContainer.innerHTML = `<div class="error"><i class="fas fa-exclamation-triangle"></i> Ошибка сети: ${error.message}</div>`;
+        }
+    }
+}
+
+// Обновляем функцию searchMovies, чтобы она учитывала тип поиска (фильмы или актеры)
+const originalSearchMovies = searchMovies;
+
+// Переопределяем функцию поиска
+window.searchMovies = async function(query, type = '', language = 'en') {
+    // Проверяем, какой тип поиска выбран (фильмы или актеры)
+    const searchType = document.querySelector('input[name="search_type"]:checked')?.value || 'movie';
+    
+    if (searchType === 'actor') {
+        // Поиск актеров
+        await searchByActor(query, language);
+    } else {
+        // Обычный поиск фильмов
+        await originalSearchMovies(query, type, language);
+    }
+};
 });
 
 window.searchMovies = searchMovies;
