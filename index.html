@@ -48,7 +48,45 @@
                 
 
 
-                <div class="search-filters">
+              
+
+
+
+
+
+                    <div class="search-filters">
+                        <label class="filter-option">
+                            <input type="radio" name="type" value="" checked> Все
+                        </label>
+                        <label class="filter-option">
+                            <input type="radio" name="type" value="movie"> Фильмы
+                        </label>
+                        <label class="filter-option">
+                            <input type="radio" name="type" value="series"> Сериалы
+                        </label>
+                        
+                        <!-- Разделитель -->
+                        <label class="filter-option" style="margin-left: 20px; border-left: 1px solid rgba(255,215,0,0.3); padding-left: 20px;">
+                            <input type="radio" name="lang" value="en" checked> 🇬🇧 English
+                        </label>
+                        <label class="filter-option">
+                            <input type="radio" name="lang" value="ru"> 🇷🇺 Русский
+                        </label>
+                        
+                        <!-- 👇 НОВАЯ КНОПКА ДЛЯ ПОИСКА АКТЕРОВ 👇 -->
+                        <label class="filter-option" style="margin-left: 20px; border-left: 1px solid rgba(255,215,0,0.3); padding-left: 20px;">
+                            <input type="radio" name="search_type" value="movie" checked> 🎬 Поиск фильмов
+                        </label>
+                        <label class="filter-option">
+                            <input type="radio" name="search_type" value="actor"> 🎭 Поиск актеров
+                        </label>
+                        <!-- 👆 КОНЕЦ ДОБАВЛЕНИЯ -->
+                    </div>
+
+
+
+
+
                     <label class="filter-option">
                         <input type="radio" name="type" value="" checked> Все
                     </label>
