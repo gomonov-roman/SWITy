@@ -2342,3 +2342,211 @@ header {
     color: #999;
 }
 
+
+
+/* Анимации для очков */
+.points-pop {
+  animation: pointsPop 0.3s ease;
+}
+
+.rank-up {
+  animation: rankUp 0.5s ease;
+}
+
+@keyframes pointsPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); color: #ffaa00; }
+  100% { transform: scale(1); }
+}
+
+@keyframes rankUp {
+  0% { transform: scale(1); background: rgba(255, 215, 0, 0.2); }
+  50% { transform: scale(1.1); background: rgba(255, 215, 0, 0.5); box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+  100% { transform: scale(1); background: rgba(255, 215, 0, 0.2); }
+}
+
+/* Система очков */
+.points-system {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 215, 0, 0.1);
+  padding: 8px 20px;
+  border-radius: 40px;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  margin-right: 10px;
+}
+
+.points-info, .rank-info {
+  text-align: center;
+}
+
+.points-label, .rank-label {
+  font-size: 10px;
+  color: #ffd700;
+  letter-spacing: 1px;
+}
+
+.user-points {
+  font-size: 22px;
+  font-weight: bold;
+  color: #ffd700;
+  line-height: 1.2;
+}
+
+.user-rank {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(255, 215, 0, 0.2);
+  padding: 2px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .points-system {
+      padding: 5px 12px;
+      gap: 8px;
+  }
+  .user-points {
+      font-size: 18px;
+  }
+  .user-rank {
+      font-size: 10px;
+  }
+}
+
+
+/* Кнопка сброса очков */
+.reset-points-btn {
+  background: rgba(255, 100, 100, 0.2);
+  border: 1px solid rgba(255, 100, 100, 0.5);
+  color: #ff6666;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reset-points-btn:hover {
+  background: rgba(255, 100, 100, 0.4);
+  transform: rotate(30deg);
+  border-color: #ff6666;
+}
+
+.record-info {
+  text-align: center;
+  border-left: 1px solid rgba(255, 215, 0, 0.3);
+  padding-left: 15px;
+  margin-left: 5px;
+}
+
+.high-score {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ffaa00;
+  line-height: 1.2;
+}
+
+/* Модальное окно для истории */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.history-modal {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 20px;
+  padding: 25px;
+  max-width: 400px;
+  width: 90%;
+  border: 2px solid #ffd700;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.history-modal h3 {
+  color: #ffd700;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.history-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.history-item {
+  background: rgba(255, 255, 255, 0.05);
+  margin: 10px 0;
+  padding: 12px 15px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-left: 3px solid #ffd700;
+}
+
+.history-points {
+  font-size: 20px;
+  font-weight: bold;
+  color: #ffd700;
+}
+
+.history-rank {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.history-date {
+  font-size: 11px;
+  color: #888;
+}
+
+.modal-close {
+  background: #ffd700;
+  color: #000;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 20px;
+  transition: all 0.3s;
+}
+
+.modal-close:hover {
+  background: #ffaa00;
+  transform: translateY(-2px);
+}
+
+.light-theme .history-modal {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .record-info {
+      display: none;
+  }
+  .reset-points-btn {
+      width: 30px;
+      height: 30px;
+      font-size: 12px;
+  }
+}
