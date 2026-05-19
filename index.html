@@ -9,7 +9,6 @@
 </head>
 <body>
     <!-- Шапка -->
-    
     <header>
         <div class="header-top">
             <div class="logo">
@@ -17,15 +16,30 @@
                 <p class="tagline">Найди свой идеальный фильм</p>
             </div>
             <div class="header-right">
+                <div class="points-system">
+                    <div class="points-info">
+                        <div class="points-label">🏆 ОЧКИ</div>
+                        <div id="user-points" class="user-points">0</div>
+                    </div>
+                    <div class="rank-info">
+                        <div class="rank-label">🎖️ ЗВАНИЕ</div>
+                        <div id="user-rank" class="user-rank">🍿 Новичок</div>
+                    </div>
+                    <div class="record-info">
+                        <div class="points-label">📊 РЕКОРД</div>
+                        <div id="high-score" class="high-score">0</div>
+                    </div>
+                    <button id="reset-points-btn" class="reset-points-btn" title="Сбросить очки">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
                 <a href="favorites.html" class="favorites-link">
                     <i class="fas fa-star"></i> Избранное 
                     <span id="fav-count" class="fav-count">0</span>
                 </a>
-                <!-- 👇 ДОБАВЬ ЭТУ КНОПКУ -->
                 <a href="video.html" class="favorites-link" style="background: linear-gradient(135deg, #ff0000, #cc0000); border-color: #ff0000;">
                     <i class="fas fa-play-circle"></i> Видео
                 </a>
-                <!-- 👆 КНОПКА ДОБАВЛЕНА -->
                 <button id="theme-toggle" class="theme-btn" title="Сменить тему">
                     <i class="fas fa-moon"></i>
                 </button>
@@ -45,48 +59,7 @@
                         <i class="fas fa-search"></i> Найти
                     </button>
                 </div>
-                
-
-
-              
-
-
-
-
-
-                    <div class="search-filters">
-                        <label class="filter-option">
-                            <input type="radio" name="type" value="" checked> Все
-                        </label>
-                        <label class="filter-option">
-                            <input type="radio" name="type" value="movie"> Фильмы
-                        </label>
-                        <label class="filter-option">
-                            <input type="radio" name="type" value="series"> Сериалы
-                        </label>
-                        
-                        <!-- Разделитель -->
-                        <label class="filter-option" style="margin-left: 20px; border-left: 1px solid rgba(255,215,0,0.3); padding-left: 20px;">
-                            <input type="radio" name="lang" value="en" checked> 🇬🇧 English
-                        </label>
-                        <label class="filter-option">
-                            <input type="radio" name="lang" value="ru"> 🇷🇺 Русский
-                        </label>
-                        
-                        <!-- 👇 НОВАЯ КНОПКА ДЛЯ ПОИСКА АКТЕРОВ 👇 -->
-                        <label class="filter-option" style="margin-left: 20px; border-left: 1px solid rgba(255,215,0,0.3); padding-left: 20px;">
-                            <input type="radio" name="search_type" value="movie" checked> 🎬 Поиск фильмов
-                        </label>
-                        <label class="filter-option">
-                            <input type="radio" name="search_type" value="actor"> 🎭 Поиск актеров
-                        </label>
-                        <!-- 👆 КОНЕЦ ДОБАВЛЕНИЯ -->
-                    </div>
-
-
-
-
-
+                <div class="search-filters">
                     <label class="filter-option">
                         <input type="radio" name="type" value="" checked> Все
                     </label>
@@ -97,26 +70,18 @@
                         <input type="radio" name="type" value="series"> Сериалы
                     </label>
                     
-                    <!-- 👇 ЭТОТ БЛОК ДОЛЖЕН БЫТЬ -->
                     <label class="filter-option" style="margin-left: 20px; border-left: 1px solid rgba(255,215,0,0.3); padding-left: 20px;">
                         <input type="radio" name="lang" value="en" checked> 🇬🇧 English
                     </label>
                     <label class="filter-option">
                         <input type="radio" name="lang" value="ru"> 🇷🇺 Русский
                     </label>
-                    <!-- 👆 ЭТОТ БЛОК ДОЛЖЕН БЫТЬ -->
-                </div>
-
-
-
-                    <label class="filter-option">
-                        <input type="radio" name="type" value="" checked> Все
+                    
+                    <label class="filter-option" style="margin-left: 20px; border-left: 1px solid rgba(255,215,0,0.3); padding-left: 20px;">
+                        <input type="radio" name="search_type" value="movie" checked> 🎬 Поиск фильмов
                     </label>
                     <label class="filter-option">
-                        <input type="radio" name="type" value="movie"> Фильмы
-                    </label>
-                    <label class="filter-option">
-                        <input type="radio" name="type" value="series"> Сериалы
+                        <input type="radio" name="search_type" value="actor"> 🎭 Поиск актеров
                     </label>
                 </div>
             </form>
@@ -132,40 +97,30 @@
 
     <!-- Основной контент -->
     <main>
-        <!-- Секция "В тренде" -->
         <section id="trending" class="section">
             <div class="section-header">
                 <h2><i class="fas fa-fire"></i> Популярные сейчас</h2>
                 <a href="#" class="see-all">Смотреть все <i class="fas fa-arrow-right"></i></a>
             </div>
-            <div id="trending-movies" class="movies-grid">
-                <!-- Трендовые фильмы загрузятся через JS -->
-            </div>
+            <div id="trending-movies" class="movies-grid"></div>
         </section>
 
-        <!-- Секция "Топ рейтинга" -->
         <section id="top-rated" class="section">
             <div class="section-header">
                 <h2><i class="fas fa-crown"></i> Лучшие по рейтингу</h2>
                 <a href="#" class="see-all">Смотреть все <i class="fas fa-arrow-right"></i></a>
             </div>
-            <div id="top-rated-movies" class="movies-grid">
-                <!-- Фильмы с высоким рейтингом -->
-            </div>
+            <div id="top-rated-movies" class="movies-grid"></div>
         </section>
 
-        <!-- Секция "Скоро выйдут" -->
         <section id="upcoming" class="section">
             <div class="section-header">
                 <h2><i class="fas fa-calendar-alt"></i> Скоро в кино</h2>
                 <a href="#" class="see-all">Смотреть все <i class="fas fa-arrow-right"></i></a>
             </div>
-            <div id="upcoming-movies" class="movies-grid">
-                <!-- Предстоящие фильмы -->
-            </div>
+            <div id="upcoming-movies" class="movies-grid"></div>
         </section>
 
-        <!-- Секция жанров -->
         <section id="genres" class="section">
             <div class="section-header">
                 <h2><i class="fas fa-tags"></i> Выберите жанр</h2>
@@ -184,18 +139,14 @@
             </div>
         </section>
 
-        <!-- Секция поиска (результаты появятся здесь) -->
         <section id="search-results" class="section" style="display: none;">
             <div class="section-header">
                 <h2><i class="fas fa-search"></i> Результаты поиска</h2>
                 <span id="results-count" class="results-count">Найдено: 0</span>
             </div>
-            <div id="movies-container" class="movies-grid">
-                <!-- Результаты поиска -->
-            </div>
+            <div id="movies-container" class="movies-grid"></div>
         </section>
 
-        <!-- Информационный блок -->
         <div class="info-box">
             <div class="info-card">
                 <i class="fas fa-database"></i>
@@ -220,7 +171,6 @@
         </div>
     </main>
 
-    <!-- Подвал -->
     <footer>
         <div class="footer-content">
             <div class="footer-section">
@@ -242,11 +192,10 @@
             </div>
         </div>
         <div class="footer-bottom">
-            <p>© 2026 Кинопортал. Используется OMDb API.Наслаждайтесь просмотром.</p>
+            <p>© 2026 Кинопортал. Используется OMDb API. Наслаждайтесь просмотром.</p>
         </div>
     </footer>
 
-    <!-- Скрипты -->
     <script src="app.js" type="module"></script>
     <script src="home.js" type="module"></script>
 </body>
