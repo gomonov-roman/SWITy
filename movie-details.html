@@ -6,29 +6,64 @@
     <title>Детали фильма - Кинопортал</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
 </head>
 <body>
     <header>
-        <a href="index.html" class="back-button">← Назад к поиску</a>
-        <h1 id="movie-title">🍿 avengers</h1>
+        <div class="header-top">
+            <div class="logo">
+                <h1><i class="fas fa-film"></i> CineMate</h1>
+                <p class="tagline">Детали фильма</p>
+            </div>
+            <div class="header-right">
+                <div class="points-system">
+                    <div class="points-info">
+                        <div class="points-label">🏆 ОЧКИ</div>
+                        <div id="user-points" class="user-points">0</div>
+                    </div>
+                    <div class="rank-info">
+                        <div class="rank-label">🎖️ ЗВАНИЕ</div>
+                        <div id="user-rank" class="user-rank">🍿 Новичок</div>
+                    </div>
+                    <div class="record-info">
+                        <div class="points-label">📊 РЕКОРД</div>
+                        <div id="high-score" class="high-score">0</div>
+                    </div>
+                    <button id="reset-points-btn" class="reset-points-btn" title="Сбросить очки (двойной клик - история)">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+                <a href="index.html" class="favorites-link">
+                    <i class="fas fa-home"></i> На главную
+                </a>
+                <button id="theme-toggle" class="theme-btn" title="Сменить тему">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+                <a href="index.html" class="favorites-link">
+                    <i class="fas fa-home"></i> На главную
+                </a>
+                <button id="theme-toggle" class="theme-btn" title="Сменить тему">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
     </header>
 
     <main class="movie-details">
-        <div class="details-container">
+        <div class="details-container" id="details-container">
             <div class="poster-section">
-                <img id="detail-poster" src="" alt="Постер фильма" class="detail-poster">
+                <img id="detail-poster" src="" alt="Постер фильма" class="detail-poster" style="cursor: pointer;">
                 <div class="movie-meta">
                     <div class="rating" id="rating">⭐ 0.0</div>
-                    <div class="year" id="detail-year">Год: 2024</div>
+                    <div class="year" id="detail-year">Год: --</div>
                     <div class="genre" id="genres">Жанр: Загрузка...</div>
-                    <div class="runtime" id="runtime">Длительность: 0 мин</div>
+                    <div class="runtime" id="runtime">Длительность: --</div>
                     <button id="favorite-btn" class="favorite-btn">☆ Добавить в избранное</button>
-                    
                 </div>
             </div>
             
             <div class="info-section">
+                <h1 id="movie-title">Загрузка...</h1>
                 <div class="overview">
                     <h2>Описание</h2>
                     <p id="detail-overview">Загрузка описания...</p>
@@ -37,109 +72,83 @@
                 <div class="details-grid">
                     <div class="detail-item">
                         <h3>📅 Дата выхода</h3>
-                        <p id="released"></p>
+                        <p id="released">--</p>
                     </div>
                     <div class="detail-item">
-                        <h3>🏆 Рейтинг</h3>
-                        <p id="imdb-rating"></p>
+                        <h3>🏆 Рейтинг IMDb</h3>
+                        <p id="imdb-rating">--</p>
                     </div>
                     <div class="detail-item">
                         <h3>🎬 Режиссёр</h3>
-                        <p id="director"></p>
+                        <p id="director">--</p>
                     </div>
                     <div class="detail-item">
                         <h3>🎭 Актёры</h3>
-                        <p id="actors"></p>
+                        <p id="actors">--</p>
                     </div>
                     <div class="detail-item">
                         <h3>🏆 Награды</h3>
-                        <p id="awards"></p>
+                        <p id="awards">--</p>
                     </div>
                     <div class="detail-item">
                         <h3>🌎 Страна</h3>
-                        <p id="country"></p>
+                        <p id="country">--</p>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- Добавьте эту секцию после блока .details-container и перед закрывающим тегом main -->
-<section class="trailer-section">
-    <h2><i class="fas fa-play-circle"></i> Трейлеры</h2>
-    
-    <div id="trailer-container">
-        <!-- Основной плеер -->
-        <div class="youtube-player-container">
-            <div class="player-placeholder" id="player-placeholder">
-                <div class="placeholder-content">
-                    <i class="fab fa-youtube"></i>
-                    <p>Трейлер будет загружен здесь</p>
+
+        <section class="trailer-section">
+            <h2><i class="fas fa-play-circle"></i> Трейлеры</h2>
+            <div id="trailer-container">
+                <div class="youtube-player-container">
+                    <div class="player-placeholder" id="player-placeholder">
+                        <div class="placeholder-content">
+                            <i class="fab fa-youtube"></i>
+                            <p>Трейлер будет загружен здесь</p>
+                        </div>
+                    </div>
+                    <iframe id="youtube-iframe" style="display: none;" width="100%" height="100%" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                
+                <div class="trailer-search">
+                    <div class="search-box">
+                        <input type="text" id="trailer-search-input" placeholder="Искать видео на YouTube..." value="">
+                        <button id="search-trailer-btn"><i class="fas fa-search"></i> Найти</button>
+                    </div>
+                    <p class="search-hint">Или посмотрите рекомендуемые видео ниже</p>
+                </div>
+                
+                <div class="recommended-videos">
+                    <h3>Рекомендуем посмотреть</h3>
+                    <div class="video-suggestions">
+                        <button class="video-suggestion" data-search="официальный трейлер"><i class="fas fa-film"></i><span>Официальный трейлер</span></button>
+                        <button class="video-suggestion" data-search="обзор фильма"><i class="fas fa-star"></i><span>Обзоры и рецензии</span></button>
+                        <button class="video-suggestion" data-search="за кадром"><i class="fas fa-video"></i><span>За кадром</span></button>
+                        <button class="video-suggestion" data-search="интервью"><i class="fas fa-microphone"></i><span>Интервью</span></button>
+                    </div>
+                </div>
+                
+                <div class="youtube-direct-link">
+                    <a id="youtube-direct-link" href="#" target="_blank" class="youtube-link"><i class="fab fa-youtube"></i> Открыть на YouTube</a>
                 </div>
             </div>
-            <iframe id="youtube-iframe" 
-                    style="display: none;" 
-                    width="100%" 
-                    height="100%" 
-                    frameborder="0" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    allowfullscreen>
-            </iframe>
-        </div>
-        
-        <!-- Поисковая строка -->
-        <div class="trailer-search">
-            <div class="search-box">
-                <input type="text" 
-                       id="trailer-search-input" 
-                       placeholder="Искать видео на YouTube..."
-                       value="">
-                <button id="search-trailer-btn">
-                    <i class="fas fa-search"></i> Найти
-                </button>
-            </div>
-            <p class="search-hint">Или посмотрите рекомендуемые видео ниже</p>
-        </div>
-        
-        <!-- Рекомендуемые видео -->
-        <div class="recommended-videos">
-            <h3>Рекомендуем посмотреть</h3>
-            <div class="video-suggestions">
-                <button class="video-suggestion" data-search="официальный трейлер">
-                    <i class="fas fa-film"></i>
-                    <span>Официальный трейлер</span>
-                </button>
-                <button class="video-suggestion" data-search="обзор фильма">
-                    <i class="fas fa-star"></i>
-                    <span>Обзоры и рецензии</span>
-                </button>
-                <button class="video-suggestion" data-search="за кадром">
-                    <i class="fas fa-video"></i>
-                    <span>За кадром</span>
-                </button>
-                <button class="video-suggestion" data-search="интервью с актерами">
-                    <i class="fas fa-microphone"></i>
-                    <span>Интервью с актерами</span>
-                </button>
-            </div>
-        </div>
-        
-        <!-- Ссылка на YouTube -->
-        <div class="youtube-direct-link">
-            <a id="youtube-direct-link" 
-               href="#" 
-               target="_blank" 
-               class="youtube-link">
-                <i class="fab fa-youtube"></i> Открыть на YouTube
-            </a>
-        </div>
-    </div>
-</section>
+        </section>
     </main>
 
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3><i class="fas fa-film"></i> Кинопортал</h3>
+                <p>Лучший сайт для поиска информации о фильмах и сериалах.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Кинопортал. Наслаждайтесь просмотром.</p>
+        </div>
+    </footer>
+
     <script src="movie-details.js" type="module"></script>
-   <!-- В конце body, после movie-details.js -->
-<script src="trailers.js"></script>
-
-
-
+    <script src="trailers.js"></script>
 </body>
 </html>
