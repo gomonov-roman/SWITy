@@ -201,4 +201,3 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('sort-by-date').addEventListener('click', () => sortFavorites('date'));
 });
 
-
